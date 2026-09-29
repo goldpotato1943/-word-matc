@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="초등 6학년 영단어 15쌍 메모리 카드 게임">
+<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>영단어 짝꿍 카드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: a desk-top of index cards — header strip with live score, 6×5 card grid, review list of found pairs below */
+:root{
+  --bg:#eef3f7; --paper:#fffdf6; --mint:#e6f6ef; --ink:#1f2d3d; --muted:#5b6b7c;
+  --line:#c9d6e2; --back:#2e5aa8; --back2:#244a8c; --accent:#ff8a3d; --good:#2f9e6b; --bad:#d9534f;
+  --rule:#bcd3ef;
+  --f-display:"Fredoka","Jua",system-ui,sans-serif;
+  --f-ko:"Jua","Gowun Dodum",system-ui,sans-serif;
+  --f-body:"Gowun Dodum",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141b24; --paper:#243140; --mint:#1f3a33; --ink:#eef3f8; --muted:#9fb0c2;
+  --line:#34465a; --back:#3b6fcf; --back2:#2c58a8; --accent:#ffa062; --good:#4cc38a; --bad:#f07470; --rule:#35506e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141b24; --paper:#243140; --mint:#1f3a33; --ink:#eef3f8; --muted:#9fb0c2;
+  --line:#34465a; --back:#3b6fcf; --back2:#2c58a8; --accent:#ffa062; --good:#4cc38a; --bad:#f07470; --rule:#35506e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-ko);font-weight:400;font-size:clamp(1.6rem,4.5vw,2.3rem);margin:0;line-height:1.1;text-wrap:balance}
+h1 .en{font-family:var(--f-display);font-weight:700;color:var(--back)}
+.sub{margin:4px 0 0;color:var(--muted)}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:6px 12px;min-width:74px;text-align:center}
+.stat b{display:block;font-family:var(--f-display);font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted);letter-spacing:.04em}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.legend{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+.chip{display:inline-flex;align-items:center;gap:6px}
+.chip i{width:14px;height:14px;border-radius:4px;border:1px solid var(--line);display:inline-block}
+.btn{font-family:var(--f-ko);font-size:1rem;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;background:var(--accent);color:#2a1606}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.board{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media (max-width:620px){.board{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}}
+.card{position:relative;aspect-ratio:3/4;max-width:100%;perspective:800px;border:0;padding:0;background:none;cursor:pointer;container-type:inline-size;border-radius:12px}
+.inner{position:absolute;inset:0;transition:transform .45s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d}
+.card.open .inner,.card.done .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:6%;text-align:center}
+.back{background:var(--back);background-image:radial-gradient(circle at 25% 25%,rgba(255,255,255,.14) 0 10%,transparent 11%),radial-gradient(circle at 75% 75%,rgba(255,255,255,.14) 0 10%,transparent 11%);background-size:40% 30%;border:3px solid var(--back2);color:#fff;font-family:var(--f-display);font-weight:700;font-size:30cqi}
+.front{transform:rotateY(180deg);border:1px solid var(--line);color:var(--ink);box-shadow:0 2px 0 var(--line)}
+.front.en{background:var(--paper);background-image:repeating-linear-gradient(to bottom,transparent 0 17%,var(--rule) 17% calc(17% + 1px));}
+.front.ko{background:var(--mint)}
+.tag{position:absolute;top:6%;left:8%;font-size:max(9px,9cqi);letter-spacing:.06em;color:var(--muted);font-family:var(--f-display)}
+.word{font-family:var(--f-display);font-weight:600;font-size:min(15cqi,1.35rem);line-height:1.1;overflow-wrap:anywhere}
+.front.ko .word{font-family:var(--f-ko);font-weight:400;font-size:min(17cqi,1.4rem);word-break:keep-all}
+.card.done .front{border-color:var(--good);box-shadow:0 0 0 2px var(--good)}
+.card.done{cursor:default}
+.card.miss .front{animation:shake .4s}
+@keyframes shake{25%{transform:rotateY(180deg) translateX(-4px)}75%{transform:rotateY(180deg) translateX(4px)}}
+.card.pop .front{animation:pop .45s}
+@keyframes pop{50%{transform:rotateY(180deg) scale(1.07)}}
+.review{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.review h2{font-family:var(--f-ko);font-weight:400;font-size:1.15rem;margin:0 0 10px}
+.review ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px 16px}
+.review li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:4px 0;min-width:0}
+.review li b{font-family:var(--f-display);font-weight:600}
+.review .empty{color:var(--muted)}
+.say{background:none;border:0;cursor:pointer;color:var(--back);font-size:.9rem;padding:0 4px}
+.win{position:fixed;inset:0;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.win .box{background:var(--paper);color:var(--ink);border-radius:18px;padding:26px 24px;max-width:360px;width:100%;text-align:center;display:flex;flex-direction:column;gap:10px;border:1px solid var(--line)}
+.win h2{font-family:var(--f-ko);font-weight:400;font-size:1.8rem;margin:0}
+.win p{margin:0;color:var(--muted)}
+.win .big{font-family:var(--f-display);font-size:1.1rem;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.inner{transition:none}.card.miss .front,.card.pop .front{animation:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="en">Word Match</span> 영단어 짝꿍 카드</h1>
+      <p class="sub">초등 6학년 영단어 · 영어 단어와 우리말 뜻을 짝지어 보세요 (15쌍)</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="pairs">0/15</b><span>맞춘 짝</span></div>
+      <div class="stat"><b id="moves">0</b><span>시도</span></div>
+      <div class="stat"><b id="time">0:00</b><span>시간</span></div>
+      <div class="stat"><b id="best">–</b><span>최고 기록</span></div>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="legend">
+      <span class="chip"><i style="background:var(--paper)"></i>영어 단어 카드</span>
+      <span class="chip"><i style="background:var(--mint)"></i>우리말 뜻 카드</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" id="peek" type="button">3초 미리보기</button>
+      <button class="btn" id="restart" type="button">새 게임 (새 단어)</button>
+    </div>
+  </div>
+
+  <div class="board" id="board" aria-label="카드 판"></div>
+
+  <section class="review">
+    <h2>찾은 단어</h2>
+    <ul id="found"><li class="empty">짝을 맞추면 여기에 단어가 모여요. 🔊를 누르면 발음을 들을 수 있어요.</li></ul>
+  </section>
+</div>
+
+<div class="win" id="win" hidden>
+  <div class="box" role="dialog" aria-labelledby="winTitle">
+    <h2 id="winTitle">다 찾았어요!</h2>
+    <p class="big" id="winStats"></p>
+    <p id="winMsg"></p>
+    <button class="btn" id="again" type="button">한 판 더</button>
+  </div>
+</div>
+
+<script>
+const BANK = [
+ ["museum","박물관"],["library","도서관"],["hospital","병원"],["weather","날씨"],["favorite","가장 좋아하는"],
+ ["delicious","맛있는"],["dangerous","위험한"],["famous","유명한"],["important","중요한"],["different","다른"],
+ ["careful","조심하는"],["healthy","건강한"],["future","미래"],["dream","꿈"],["holiday","휴일"],
+ ["vacation","방학"],["subject","과목"],["science","과학"],["history","역사"],["market","시장"],
+ ["restaurant","식당"],["grandmother","할머니"],["borrow","빌리다"],["invite","초대하다"],["practice","연습하다"],
+ ["remember","기억하다"],["forget","잊다"],["arrive","도착하다"],["travel","여행하다"],["visit","방문하다"],
+ ["climb","오르다"],["exercise","운동하다"],["brave","용감한"],["curious","호기심 많은"],["honest","정직한"],
+ ["kind","친절한"],["nervous","긴장한"],["excited","신이 난"],["tired","피곤한"],["bored","지루한"],
+ ["festival","축제"],["environment","환경"],["planet","행성"],["island","섬"],["mountain","산"],
+ ["river","강"],["bridge","다리"],["corner","모퉁이"],["address","주소"],["schedule","일정"],
+ ["contest","대회"],["prize","상"],["medicine","약"],["fever","열"],["headache","두통"],
+ ["invention","발명"],["scientist","과학자"],["pilot","조종사"],["firefighter","소방관"],["question","질문"]
+];
+const PAIRS = 15;
+const $ = id => document.getElementById(id);
+let first=null, lock=false, moves=0, matched=0, t0=null, timer=null, foundList=[];
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function fmt(s){return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function getBest(){try{return JSON.parse(localStorage.getItem("wm-best")||"null")}catch(e){return null}}
+function setBest(v){try{localStorage.setItem("wm-best",JSON.stringify(v))}catch(e){}}
+function showBest(){const b=getBest();$("best").textContent=b?b.moves+"회":"–"}
+
+function speak(word){
+  try{const u=new SpeechSynthesisUtterance(word);u.lang="en-US";u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}
+}
+
+function newGame(){
+  clearInterval(timer);timer=null;t0=null;first=null;lock=false;moves=0;matched=0;foundList=[];
+  $("time").textContent="0:00";$("win").hidden=true;
+  const picks=shuffle(BANK.slice()).slice(0,PAIRS);
+  const cards=[];
+  picks.forEach((p,i)=>{cards.push({id:i,side:"en",text:p[0],en:p[0],ko:p[1]});cards.push({id:i,side:"ko",text:p[1],en:p[0],ko:p[1]})});
+  shuffle(cards);
+  const board=$("board");board.innerHTML="";
+  cards.forEach(c=>{
+    const b=document.createElement("button");
+    b.type="button";b.className="card";b.dataset.id=c.id;b.dataset.side=c.side;
+    b.setAttribute("aria-label","뒤집힌 카드");
+    b.innerHTML=`<div class="inner"><div class="face back" aria-hidden="true">?</div>
+      <div class="face front ${c.side}"><span class="tag">${c.side==="en"?"ENG":"뜻"}</span><span class="word">${c.text}</span></div></div>`;
+    b._c=c;b.addEventListener("click",()=>flip(b));
+    board.appendChild(b);
+  });
+  renderFound();update();
+}
+
+function update(){$("pairs").textContent=matched+"/"+PAIRS;$("moves").textContent=moves;showBest()}
+
+function startTimer(){if(timer)return;t0=Date.now();timer=setInterval(()=>{$("time").textContent=fmt(Math.floor((Date.now()-t0)/1000))},500)}
+
+function flip(b){
+  if(lock||b.classList.contains("open")||b.classList.contains("done"))return;
+  startTimer();
+  b.classList.add("open");b.setAttribute("aria-label",b._c.text);
+  if(b._c.side==="en")speak(b._c.en);
+  if(!first){first=b;return}
+  moves++;
+  const a=first;first=null;
+  if(a._c.id===b._c.id){
+    [a,b].forEach(x=>{x.classList.remove("open");x.classList.add("done","pop");x.setAttribute("aria-disabled","true")});
+    matched++;foundList.push(a._c);renderFound();update();
+    if(matched===PAIRS)finish();
+  }else{
+    lock=true;update();
+    setTimeout(()=>{[a,b].forEach(x=>x.classList.add("miss"))},450);
+    setTimeout(()=>{[a,b].forEach(x=>{x.classList.remove("open","miss");x.setAttribute("aria-label","뒤집힌 카드")});lock=false},1100);
+  }
+}
+
+function renderFound(){
+  const ul=$("found");
+  if(!foundList.length){ul.innerHTML='<li class="empty">짝을 맞추면 여기에 단어가 모여요. 🔊를 누르면 발음을 들을 수 있어요.</li>';return}
+  ul.innerHTML=foundList.map(c=>`<li><span><b>${c.en}</b> <button class="say" type="button" data-w="${c.en}" aria-label="${c.en} 발음 듣기">🔊</button></span><span>${c.ko}</span></li>`).join("");
+  ul.querySelectorAll(".say").forEach(s=>s.addEventListener("click",()=>speak(s.dataset.w)));
+}
+
+function finish(){
+  clearInterval(timer);timer=null;
+  const secs=Math.floor((Date.now()-t0)/1000);
+  const best=getBest();let msg;
+  if(!best||moves<best.moves){setBest({moves,secs});msg=best?"새 최고 기록이에요! 🎉":"첫 기록을 세웠어요!";}
+  else msg=`최고 기록은 ${best.moves}회예요. 다시 도전해 볼까요?`;
+  $("winStats").textContent=`${moves}번 시도 · ${fmt(secs)}`;
+  $("winMsg").textContent=msg;update();
+  setTimeout(()=>{$("win").hidden=false;$("again").focus()},600);
+}
+
+$("peek").addEventListener("click",()=>{
+  if(lock)return;lock=true;
+  const hidden=[...document.querySelectorAll(".card:not(.done):not(.open)")];
+  hidden.forEach(c=>c.classList.add("open"));
+  setTimeout(()=>{hidden.forEach(c=>c.classList.remove("open"));lock=false},3000);
+});
+$("restart").addEventListener("click",newGame);
+$("again").addEventListener("click",newGame);
+newGame();
+</script>
+</body>
+</html>
